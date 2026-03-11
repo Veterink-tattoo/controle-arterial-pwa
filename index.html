@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description"
+    content="Controle Arterial — Acompanhe sua pressão arterial, batimentos cardíacos e saturação de forma simples.">
+  <meta name="theme-color" content="#0D1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Controle Arterial">
+  <title>Controle Arterial</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <div id="app">
+
+    <!-- ========== ONBOARDING ========== -->
+    <section id="screen-onboarding" class="screen active">
+      <div class="onboarding-container">
+        <div class="onboarding-header">
+          <div class="onboarding-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#F85149" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </div>
+          <h1>Controle Arterial</h1>
+          <p class="onboarding-subtitle">Monitore sua pressão, pulso e saturação.<br>Simples, rápido e offline.</p>
+        </div>
+
+        <form id="form-onboarding" class="form-card" autocomplete="off">
+          <div class="input-group">
+            <label for="onb-nome">Nome do Paciente</label>
+            <input type="text" id="onb-nome" placeholder="João Silva" required maxlength="30">
+          </div>
+          <div class="input-group">
+            <label for="onb-nascimento">Data de nascimento</label>
+            <input type="date" id="onb-nascimento">
+          </div>
+          <div class="input-group">
+            <label for="onb-medicamentos">Medicamentos em uso (opcional)</label>
+            <textarea id="onb-medicamentos" placeholder="Ex: Losartana 50mg, Atenolol 25mg" rows="2"
+              maxlength="200"></textarea>
+          </div>
+          <div class="input-group">
+            <label for="onb-tecnico">Técnico / Cuidador (opcional)</label>
+            <input type="text" id="onb-tecnico" placeholder="Nome do técnico ou cuidador" maxlength="50">
+          </div>
+          <button type="submit" class="btn btn-primary btn-lg">
+            Começar
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ========== DASHBOARD ========== -->
+    <section id="screen-dashboard" class="screen">
+      <div class="screen-content">
+        <header class="screen-header dash-header-row">
+          <div class="dash-header-left">
+            <h2 id="dash-greeting">Olá!</h2>
+            <p class="motivational-quote" id="dash-quote"></p>
+          </div>
+          <div class="dash-header-right">
+            <span class="dash-paciente-label">Paciente</span>
+            <span class="dash-paciente-nome" id="dash-paciente-nome"></span>
+          </div>
+        </header>
+
+        <!-- Estado Vazio -->
+        <div id="dash-empty" class="empty-state-card" style="display:none;">
+          <div class="empty-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+            </svg>
+          </div>
+          <h3>Nenhuma aferição registrada</h3>
+          <p>Toque em <strong>Registrar</strong> para adicionar sua primeira medição.</p>
+        </div>
+
+        <!-- Card Última Aferição -->
+        <div id="dash-ultima-card" class="card card-ultima" style="display:none;">
+          <div class="card-header-row">
+            <span class="card-label">Última Aferição</span>
+            <div id="dash-pa-badge"></div>
+          </div>
+
+          <!-- Barra de classificação PA -->
+          <div class="pa-bar-container" id="dash-pa-bar">
+            <div class="pa-bar">
+              <div class="pa-bar-zone pa-bar-normal"></div>
+              <div class="pa-bar-zone pa-bar-pre"></div>
+              <div class="pa-bar-zone pa-bar-ha1"></div>
+              <div class="pa-bar-zone pa-bar-ha2"></div>
+              <div class="pa-bar-zone pa-bar-ha3"></div>
+            </div>
+            <div class="pa-bar-indicator">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#F85149"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            </div>
+          </div>
+
+          <div class="dash-metrics">
+            <div class="dash-metric">
+              <span class="dash-metric-label">SIS.</span>
+              <span class="dash-metric-value" id="dash-sis">--</span>
+              <span class="dash-metric-unit">mmHg</span>
+              <div id="dash-delta-sis"></div>
+            </div>
+            <div class="dash-metric">
+              <span class="dash-metric-label">DIA.</span>
+              <span class="dash-metric-value" id="dash-dia">--</span>
+              <span class="dash-metric-unit">mmHg</span>
+              <div id="dash-delta-dia"></div>
+            </div>
+            <div class="dash-metric">
+              <span class="dash-metric-label">PUL.</span>
+              <span class="dash-metric-value" id="dash-pul">--</span>
+              <span class="dash-metric-unit">bpm</span>
+              <div id="dash-delta-pul"></div>
+            </div>
+            <div class="dash-metric">
+              <span class="dash-metric-label">SpO2</span>
+              <span class="dash-metric-value" id="dash-spo2">--</span>
+              <span class="dash-metric-unit">%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Médias -->
+        <div class="card card-medias">
+          <span class="card-label">Médias</span>
+          <div class="medias-tabs">
+            <span class="medias-tab-label">SEMANA</span>
+            <span class="medias-tab-label">MÊS</span>
+          </div>
+          <div class="medias-grid">
+            <div class="medias-col">
+              <div class="media-circle">
+                <span class="media-circle-value" id="media-sis-sem">--</span>
+                <span class="media-circle-label">SIS</span>
+              </div>
+              <div class="media-circle">
+                <span class="media-circle-value" id="media-dia-sem">--</span>
+                <span class="media-circle-label">DIA</span>
+              </div>
+              <div class="media-circle">
+                <span class="media-circle-value" id="media-pul-sem">--</span>
+                <span class="media-circle-label">PUL</span>
+              </div>
+            </div>
+            <div class="medias-col">
+              <div class="media-circle">
+                <span class="media-circle-value" id="media-sis-mes">--</span>
+                <span class="media-circle-label">SIS</span>
+              </div>
+              <div class="media-circle">
+                <span class="media-circle-value" id="media-dia-mes">--</span>
+                <span class="media-circle-label">DIA</span>
+              </div>
+              <div class="media-circle">
+                <span class="media-circle-value" id="media-pul-mes">--</span>
+                <span class="media-circle-label">PUL</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfico PA -->
+        <div class="chart-container" id="dash-chart-container" style="display:none;">
+          <div class="chart-header">
+            <h3>Pressão Arterial</h3>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#F85149"></span>SIS</span>
+              <span class="legend-item"><span class="legend-dot" style="background:#58A6FF"></span>DIA</span>
+            </div>
+          </div>
+          <canvas id="chart-pa" width="400" height="180"></canvas>
+        </div>
+
+        <!-- Gráfico Pulso -->
+        <div class="chart-container" id="dash-pulse-chart-container" style="display:none;">
+          <div class="chart-header">
+            <h3>Pulso Cardíaco</h3>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#3FB950"></span>BPM</span>
+            </div>
+          </div>
+          <canvas id="chart-pulso" width="400" height="140"></canvas>
+        </div>
+
+        <!-- Card Glicemia -->
+        <div id="dash-gli-card" class="card card-glicemia" style="display:none;">
+          <div class="card-header-row">
+            <span class="card-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--gli-atencao)" style="vertical-align:-2px; margin-right:4px;"><path d="M12 2C12 2 4 12 4 16a8 8 0 1 0 16 0C20 12 12 2 12 2z"/></svg>
+              Glicemia
+            </span>
+            <div id="dash-gli-badge"></div>
+          </div>
+          <div class="gli-metric-row">
+            <div class="gli-metric-main">
+              <span class="gli-metric-value" id="dash-gli-valor">--</span>
+              <span class="gli-metric-unit">mg/dL</span>
+            </div>
+            <div class="gli-metric-info">
+              <span class="gli-metric-momento" id="dash-gli-momento"></span>
+              <span class="gli-metric-refeicao" id="dash-gli-refeicao"></span>
+            </div>
+          </div>
+          <div class="gli-medias-row">
+            <div class="gli-media-item">
+              <span class="gli-media-label">Média 7d</span>
+              <span class="gli-media-value" id="dash-gli-media-sem">--</span>
+            </div>
+            <div class="gli-media-item">
+              <span class="gli-media-label">Média 30d</span>
+              <span class="gli-media-value" id="dash-gli-media-mes">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gráfico Glicemia -->
+        <div class="chart-container" id="dash-gli-chart-container" style="display:none;">
+          <div class="chart-header">
+            <h3>Glicemia</h3>
+            <div class="chart-legend">
+              <span class="legend-item"><span class="legend-dot" style="background:#D29922"></span>mg/dL</span>
+            </div>
+          </div>
+          <canvas id="chart-glicemia" width="400" height="140"></canvas>
+        </div>
+
+        <!-- Card Temperatura -->
+        <div id="dash-temp-card" class="card card-glicemia" style="display:none;">
+          <div class="card-header-row">
+            <span class="card-label">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:4px;"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+              Temperatura
+            </span>
+            <div id="dash-temp-badge"></div>
+          </div>
+          <div class="gli-metric-row">
+            <div class="gli-metric-main">
+              <span class="gli-metric-value" id="dash-temp-valor">--</span>
+              <span class="gli-metric-unit">°C</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="last-update" id="dash-last-update"></div>
+      </div>
+    </section>
+
+    <!-- ========== REGISTRAR ========== -->
+    <section id="screen-registrar" class="screen">
+      <div class="screen-content">
+        <header class="screen-header">
+          <h2 id="registrar-titulo">Novo Registro</h2>
+          <div class="type-tabs" id="registrar-type-tabs">
+            <button class="type-tab active" data-type="afericao">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              Aferição
+            </button>
+            <button class="type-tab" data-type="glicemia">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C12 2 4 12 4 16a8 8 0 1 0 16 0C20 12 12 2 12 2z"/></svg>
+              Glicemia
+            </button>
+            <button class="type-tab" data-type="temperatura">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+              Temp.
+            </button>
+          </div>
+        </header>
+
+        <!-- Form Aferição -->
+        <div id="form-afericao-container">
+          <form id="form-registro" class="form-card" autocomplete="off">
+            <div class="input-row">
+              <div class="input-group">
+                <label for="reg-sis">Sistólica (mmHg)</label>
+                <input type="number" id="reg-sis" placeholder="120" required min="60" max="300" step="1" class="input-lg"
+                  inputmode="numeric">
+              </div>
+              <div class="input-group">
+                <label for="reg-dia">Diastólica (mmHg)</label>
+                <input type="number" id="reg-dia" placeholder="80" required min="30" max="200" step="1" class="input-lg"
+                  inputmode="numeric">
+              </div>
+            </div>
+            <div class="input-row">
+              <div class="input-group">
+                <label for="reg-pul">Pulso (bpm)</label>
+                <input type="number" id="reg-pul" placeholder="72" required min="30" max="250" step="1" class="input-lg"
+                  inputmode="numeric">
+              </div>
+              <div class="input-group">
+                <label for="reg-spo2">SpO2 (%) <span class="optional-tag">opcional</span></label>
+                <input type="number" id="reg-spo2" placeholder="97" min="50" max="100" step="1" class="input-lg"
+                  inputmode="numeric">
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="reg-data">Data / Hora</label>
+              <input type="datetime-local" id="reg-data">
+            </div>
+            <div class="input-group">
+              <label for="reg-obs">Observação <span class="optional-tag">opcional</span></label>
+              <input type="text" id="reg-obs" placeholder="Ex: Após caminhada" maxlength="100">
+            </div>
+            <input type="hidden" id="reg-edit-id" value="">
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-salvar-afericao">
+              Salvar Aferição
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg" id="btn-cancelar-edicao" style="display:none; margin-top:8px;">
+              Cancelar Edição
+            </button>
+          </form>
+
+          <!-- Tabela de referência rápida -->
+          <div class="card card-ref-table">
+            <h3>Classificação PA (SBC 2025)</h3>
+            <table class="ref-table">
+              <thead>
+                <tr>
+                  <th>Classificação</th>
+                  <th>PAS</th>
+                  <th></th>
+                  <th>PAD</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--pa-normal)"></span> PA Normal</td>
+                  <td>&lt; 120</td>
+                  <td>e</td>
+                  <td>&lt; 80</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--pa-pre)"></span> Pré-Hipertensão</td>
+                  <td>120–139</td>
+                  <td>e/ou</td>
+                  <td>80–89</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--pa-ha1)"></span> HA Estágio 1</td>
+                  <td>140–159</td>
+                  <td>e/ou</td>
+                  <td>90–99</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--pa-ha2)"></span> HA Estágio 2</td>
+                  <td>160–179</td>
+                  <td>e/ou</td>
+                  <td>100–109</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--pa-ha3)"></span> HA Estágio 3</td>
+                  <td>≥ 180</td>
+                  <td>e/ou</td>
+                  <td>≥ 110</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Form Glicemia -->
+        <div id="form-glicemia-container" style="display:none;">
+          <form id="form-glicemia" class="form-card" autocomplete="off">
+            <div class="input-group">
+              <label for="reg-gli">Glicemia (mg/dL)</label>
+              <input type="number" id="reg-gli" placeholder="100" required min="20" max="600" step="1" class="input-lg"
+                inputmode="numeric">
+            </div>
+            <div class="input-row">
+              <div class="input-group">
+                <label for="reg-gli-momento">Momento</label>
+                <select id="reg-gli-momento">
+                  <option value="jejum">Jejum</option>
+                  <option value="pre-prandial">Pré-prandial</option>
+                  <option value="pos-prandial">Pós-prandial</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="reg-gli-refeicao">Refeição <span class="optional-tag">opcional</span></label>
+                <select id="reg-gli-refeicao">
+                  <option value="">--</option>
+                  <option value="cafe">Café da manhã</option>
+                  <option value="almoco">Almoço</option>
+                  <option value="lanche">Lanche</option>
+                  <option value="jantar">Jantar</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <label for="reg-gli-data">Data / Hora</label>
+              <input type="datetime-local" id="reg-gli-data">
+            </div>
+            <div class="input-group">
+              <label for="reg-gli-obs">Observação <span class="optional-tag">opcional</span></label>
+              <input type="text" id="reg-gli-obs" placeholder="Ex: Após jejum de 8h" maxlength="100">
+            </div>
+            <input type="hidden" id="reg-gli-edit-id" value="">
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-salvar-glicemia">
+              Salvar Glicemia
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg" id="btn-cancelar-edicao-gli" style="display:none; margin-top:8px;">
+              Cancelar Edição
+            </button>
+          </form>
+
+          <!-- Tabela de referência Glicemia -->
+          <div class="card card-ref-table">
+            <h3>Classificação Glicemia (SBD 2024)</h3>
+            <table class="ref-table">
+              <thead>
+                <tr>
+                  <th>Classificação</th>
+                  <th>Jejum</th>
+                  <th>Pré-prand.</th>
+                  <th>Pós-prand.</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--gli-normal)"></span> Normal</td>
+                  <td>&lt; 100</td>
+                  <td>&lt; 100</td>
+                  <td>&lt; 140</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--gli-atencao)"></span> Atenção</td>
+                  <td>100–125</td>
+                  <td>100–125</td>
+                  <td>140–199</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--gli-alto)"></span> Alto</td>
+                  <td>≥ 126</td>
+                  <td>≥ 126</td>
+                  <td>≥ 200</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Form Temperatura -->
+        <div id="form-temperatura-container" style="display:none;">
+          <form id="form-temperatura" class="form-card" autocomplete="off">
+            <div class="input-group">
+              <label for="reg-temp">Temperatura (°C)</label>
+              <input type="number" id="reg-temp" placeholder="36.5" required min="30" max="45" step="0.1" class="input-lg"
+                inputmode="decimal">
+            </div>
+            <div class="input-group">
+              <label for="reg-temp-data">Data / Hora</label>
+              <input type="datetime-local" id="reg-temp-data">
+            </div>
+            <div class="input-group">
+              <label for="reg-temp-obs">Observação <span class="optional-tag">opcional</span></label>
+              <input type="text" id="reg-temp-obs" placeholder="Ex: Acordando assintomático" maxlength="100">
+            </div>
+            <input type="hidden" id="reg-temp-edit-id" value="">
+            <button type="submit" class="btn btn-primary btn-lg" id="btn-salvar-temperatura">
+              Salvar Temperatura
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg" id="btn-cancelar-edicao-temp" style="display:none; margin-top:8px;">
+              Cancelar Edição
+            </button>
+          </form>
+
+          <!-- Tabela de referência Temperatura -->
+          <div class="card card-ref-table">
+            <h3>Classificação Temperatura Corporar</h3>
+            <table class="ref-table">
+              <thead>
+                <tr>
+                  <th>Classificação</th>
+                  <th>Faixa (°C)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--temp-baixa)"></span> Hipotermia</td>
+                  <td>&lt; 35.0</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--temp-normal)"></span> Normal</td>
+                  <td>35.0 – 37.2</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--temp-atencao)"></span> Febrícula</td>
+                  <td>37.3 – 37.7</td>
+                </tr>
+                <tr>
+                  <td><span class="ref-dot" style="background:var(--temp-alta)"></span> Febre</td>
+                  <td>≥ 37.8</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== HISTÓRICO ========== -->
+    <section id="screen-historico" class="screen">
+      <div class="screen-content">
+        <header class="screen-header">
+          <h2>Histórico</h2>
+          <div class="type-tabs" id="historico-type-tabs">
+            <button class="type-tab active" data-type="afericao">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              PA
+            </button>
+            <button class="type-tab" data-type="glicemia">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C12 2 4 12 4 16a8 8 0 1 0 16 0C20 12 12 2 12 2z"/></svg>
+              Glicemia
+            </button>
+            <button class="type-tab" data-type="temperatura">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+              Temp.
+            </button>
+          </div>
+          <div class="filter-tabs" id="historico-filter-tabs">
+            <button class="filter-tab active" data-filter="">Todos</button>
+            <button class="filter-tab" data-filter="7">7 dias</button>
+            <button class="filter-tab" data-filter="30">30 dias</button>
+          </div>
+        </header>
+        <div id="historico-list" class="timeline">
+          <p class="empty-state">Nenhum registro ainda. Comece registrando uma aferição!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PERFIL ========== -->
+    <section id="screen-perfil" class="screen">
+      <div class="screen-content">
+        <header class="screen-header">
+          <h2>Meu Perfil</h2>
+        </header>
+
+        <div class="profile-card" id="profile-info">
+          <div class="profile-avatar">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.5"
+              stroke-linecap="round">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M20 21a8 8 0 0 0-16 0" />
+            </svg>
+          </div>
+          <h3 id="perfil-nome">--</h3>
+          <p id="perfil-info-line"></p>
+          <div class="perfil-stats">
+            <span class="perfil-stat"><strong id="perfil-total">0</strong> aferições registradas</span>
+          </div>
+        </div>
+
+        <!-- Editar Perfil -->
+        <div class="form-card">
+          <h3>Editar Dados</h3>
+          <form id="form-editar-perfil" autocomplete="off">
+            <div class="input-group">
+              <label for="edit-nome">Nome do Paciente</label>
+              <input type="text" id="edit-nome" maxlength="30">
+            </div>
+            <div class="input-group">
+              <label for="edit-nascimento">Data de nascimento</label>
+              <input type="date" id="edit-nascimento">
+            </div>
+            <div class="input-group">
+              <label for="edit-medicamentos">Medicamentos em uso</label>
+              <textarea id="edit-medicamentos" rows="2" maxlength="200"></textarea>
+            </div>
+            <div class="input-group">
+              <label for="edit-tecnico">Técnico / Cuidador</label>
+              <input type="text" id="edit-tecnico" placeholder="Nome do técnico ou cuidador" maxlength="50">
+            </div>
+            <button type="submit" class="btn btn-secondary">Atualizar Perfil</button>
+          </form>
+        </div>
+
+
+
+        <!-- Dados -->
+        <div class="form-card">
+          <h3>Meus Dados</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <button type="button" id="btn-exportar-csv" class="btn btn-secondary" style="background: rgba(30,215,96,0.15); color: #1ed760; border-color: rgba(30,215,96,0.3);" title="Baixar planilha para Excel">
+              Exportar Excel
+            </button>
+            <button type="button" id="btn-exportar-wa" class="btn btn-secondary" style="background: rgba(37,211,102,0.15); color: #25D366; border-color: rgba(37,211,102,0.3); display: flex; align-items: center; justify-content: center; gap: 6px;" title="Copiar/Compartilhar via WhatsApp">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/></svg>
+              WhatsApp
+            </button>
+            <button type="button" id="btn-exportar" class="btn btn-secondary" title="Fazer backup em arquivo JSON">
+              Backup
+            </button>
+            <label class="btn btn-secondary" for="input-importar" style="display:flex; justify-content:center; align-items:center;" title="Restaurar de arquivo JSON">
+              Restaurar
+            </label>
+            <input type="file" id="input-importar" accept=".json" style="display:none;">
+          </div>
+          <button type="button" id="btn-limpar-dados" class="btn btn-danger btn-sm" style="width:100%;">
+            Apagar todos os dados
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== BOTTOM NAV ========== -->
+    <nav id="bottom-nav" class="bottom-nav" style="display:none;">
+      <button class="nav-item active" data-screen="dashboard">
+        <span class="nav-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </span>
+        <span class="nav-label">Início</span>
+      </button>
+      <button class="nav-item" data-screen="registrar">
+        <span class="nav-icon nav-icon-plus">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </span>
+        <span class="nav-label">Registrar</span>
+      </button>
+      <button class="nav-item" data-screen="historico">
+        <span class="nav-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+        </span>
+        <span class="nav-label">Histórico</span>
+      </button>
+      <button class="nav-item" data-screen="perfil">
+        <span class="nav-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </span>
+        <span class="nav-label">Perfil</span>
+      </button>
+    </nav>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal -->
+    <div id="modal-overlay" class="modal-overlay" style="display:none;">
+      <div class="modal">
+        <h3 id="modal-title"></h3>
+        <p id="modal-message"></p>
+        <div class="modal-actions">
+          <button id="modal-cancel" class="btn btn-secondary">Cancelar</button>
+          <button id="modal-confirm" class="btn btn-danger">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+
+</html>
