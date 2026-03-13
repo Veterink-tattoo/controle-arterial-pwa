@@ -176,9 +176,19 @@ function calcularMedias(afericoes) {
  * Filtra aferições por período (últimos N dias).
  */
 function filtrarPorPeriodo(afericoes, dias) {
-    if (!dias) return afericoes; // "tudo"
+    if (dias === 'all' || !dias) return afericoes;
+    
+    // Se for uma string de data (YYYY-MM-DD)
+    if (typeof dias === 'string' && dias.includes('-')) {
+        return afericoes.filter(a => a.data.split('T')[0] === dias);
+    }
+
+    // Se for número de dias
+    const n = parseInt(dias);
     const limite = new Date();
-    limite.setDate(limite.getDate() - dias);
+    limite.setHours(0, 0, 0, 0); // Começo do dia de hoje
+    limite.setDate(limite.getDate() - (n - 1));
+    
     return afericoes.filter(a => new Date(a.data) >= limite);
 }
 
@@ -345,16 +355,44 @@ function escapeCSV(str) {
 /**
  * Gera texto formatado para compartilhar no WhatsApp (últimos N dias).
  */
-function gerarTextoWhatsApp(dados, dias = 7) {
-    let txt = `📊 *Histórico de Saúde* (Últimos ${dias} dias)\n`;
+function gerarTextoWhatsApp(perfil, dados, dias = 7) {
+    if (!dados) return "Nenhum dado encontrado para exportação.";
+
+    // Prepara o rótulo do período para o cabeçalho
+    let rotuloPeriodo = `Últimos ${dias} dias`;
+    if (dias === 'all') rotuloPeriodo = "Histórico Completo";
+    else if (dias === '1') rotuloPeriodo = "Hoje";
+    else if (typeof dias === 'string' && dias.includes('-')) {
+        const [y, m, d] = dias.split('-');
+        rotuloPeriodo = `${d}/${m}/${y}`;
+    }
+
+    // Tenta pegar o nome do paciente ativo se o perfil estiver incompleto
+    let nomeP = perfil?.nome;
+    if (!nomeP && typeof getActivePaciente === 'function') {
+        const pAtivo = getActivePaciente();
+        if (pAtivo) nomeP = pAtivo.nome;
+    }
+
+    let txt = `📊 *Histórico de Saúde*\n`;
+    if (nomeP) txt += `👤 *Paciente:* ${nomeP}\n`;
+    
+    // Suporte a "profissional" ou "tecnico" (casos legados ou novos)
+    const prof = perfil?.tecnico || perfil?.profissional;
+    if (prof) txt += `🩺 *Profissional:* ${prof}\n`;
+    
+    txt += `📅 *Período:* ${rotuloPeriodo}\n`;
+    txt += `──────────────────\n`;
 
     const afericoes = filtrarPorPeriodo(dados.afericoes || [], dias);
     if (afericoes.length > 0) {
         txt += `\n🩸 *Pressão Arterial*\n`;
         const subset = [...afericoes].sort((a, b) => new Date(b.data) - new Date(a.data));
         subset.forEach(a => {
-            const c = classificarPA(a.sistolica, a.diastolica).label;
-            txt += `- ${formatarData(a.data)} ${formatarHora(a.data)}: ${a.sistolica}x${a.diastolica} mmHg, Pulso ${a.pulso} (${c})\n`;
+            const classif = classificarPA(a.sistolica, a.diastolica);
+            const dataStr = formatarData(a.data);
+            const horaStr = formatarHora(a.data);
+            txt += `- ${dataStr} ${horaStr}: ${a.sistolica}x${a.diastolica} mmHg, Pulso ${a.pulso} (${classif.label})\n`;
         });
     }
 
@@ -363,10 +401,12 @@ function gerarTextoWhatsApp(dados, dias = 7) {
         txt += `\n💧 *Glicemia*\n`;
         const subset = [...glicemias].sort((a, b) => new Date(b.data) - new Date(a.data));
         subset.forEach(g => {
-            const c = classificarGlicemia(g.glicemia, g.momento).label;
-            const m = MOMENTOS_GLICEMIA[g.momento] || '';
-            const r = g.refeicao ? ` • ${REFEICOES_GLICEMIA[g.refeicao]}` : '';
-            txt += `- ${formatarData(g.data)} ${formatarHora(g.data)}: ${g.glicemia} mg/dL - ${m}${r} (${c})\n`;
+            const classif = classificarGlicemia(g.glicemia, g.momento);
+            const dataStr = formatarData(g.data);
+            const horaStr = formatarHora(g.data);
+            const m = MOMENTOS_GLICEMIA[g.momento] || g.momento || '';
+            const r = g.refeicao ? ` • ${REFEICOES_GLICEMIA[g.refeicao] || g.refeicao}` : '';
+            txt += `- ${dataStr} ${horaStr}: ${g.glicemia} mg/dL - ${m}${r} (${classif.label})\n`;
         });
     }
 

@@ -9,21 +9,32 @@ let activeRegisterType = 'afericao'; // 'afericao', 'glicemia', 'temperatura'
 let activeHistoryType = 'afericao'; // 'afericao', 'glicemia', 'temperatura'
 
 document.addEventListener('DOMContentLoaded', () => {
+    initStorage();
     initModal();
     initNav();
     initOnboarding();
     initRegistro();
     initPerfil();
     initHistorico();
+    initPacientes();
     initTypeTabs();
+    initExportWA();
 
     // Verificar se tem perfil salvo
     const perfil = getPerfil();
     if (perfil) {
         hideNav();
         showNav();
-        showScreen('dashboard');
-        renderDashboard();
+        
+        // Verificar se precisamos forçar a tela de perfil após criar novo paciente
+        if (sessionStorage.getItem('controle_arterial_force_perfil')) {
+            sessionStorage.removeItem('controle_arterial_force_perfil');
+            showScreen('perfil');
+            renderPerfil();
+        } else {
+            showScreen('dashboard');
+            renderDashboard();
+        }
     } else {
         hideNav();
         showScreen('onboarding');
@@ -53,6 +64,7 @@ function initOnboarding() {
             return;
         }
 
+        criarPaciente(nome);
         savePerfil({ nome, data_nascimento: nascimento || null, medicamentos: medicamentos || null, tecnico: tecnico || null });
         showToast('Perfil criado com sucesso!', 'success');
         showNav();
@@ -226,10 +238,19 @@ function initTypeTabs() {
     const regTabs = document.querySelectorAll('#registrar-type-tabs .type-tab');
     regTabs.forEach(btn => {
         btn.addEventListener('click', () => {
-            if (editingAfericaoId || editingGlicemiaId || editingTemperaturaId) return; // Nao trocar de aba editando
+            // Se estiver editando e trocar de aba, cancela a edição atual
+            if (activeRegisterType !== btn.dataset.type) {
+                if (editingAfericaoId) cancelarEdicaoAfericao();
+                if (editingGlicemiaId) cancelarEdicaoGlicemia();
+                if (editingTemperaturaId) cancelarEdicaoTemperatura();
+            }
+
             regTabs.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             activeRegisterType = btn.dataset.type;
+            
+            // Restaura o título sempre que trocar de aba
+            document.getElementById('registrar-titulo').textContent = 'Novo Registro';
             
             document.getElementById('form-afericao-container').style.display = activeRegisterType === 'afericao' ? '' : 'none';
             document.getElementById('form-glicemia-container').style.display = activeRegisterType === 'glicemia' ? '' : 'none';
@@ -393,9 +414,13 @@ function initRegistro() {
 }
 
 function prepararFormRegistro() {
+    // Se já estivermos editando algo, não resetamos!
+    if (editingAfericaoId || editingGlicemiaId || editingTemperaturaId) return;
+
     cancelarEdicaoAfericao();
     cancelarEdicaoGlicemia();
     cancelarEdicaoTemperatura();
+
     if (activeRegisterType === 'afericao') {
         const dataInput = document.getElementById('reg-data');
         if (dataInput) dataInput.value = dataLocalAgora();
@@ -413,9 +438,6 @@ function editarAfericao(id) {
     if (!a) return;
 
     editingAfericaoId = id;
-    
-    // Forçar aba aferição
-    document.querySelector('#registrar-type-tabs [data-type="afericao"]').click();
 
     document.getElementById('reg-edit-id').value = id;
     document.getElementById('reg-sis').value = a.sistolica;
@@ -430,10 +452,18 @@ function editarAfericao(id) {
     const local = new Date(d.getTime() - offset * 60000);
     document.getElementById('reg-data').value = local.toISOString().slice(0, 16);
 
-    // UI de edição
     document.getElementById('registrar-titulo').textContent = 'Editar Aferição';
     document.getElementById('btn-salvar-afericao').textContent = 'Atualizar Aferição';
     document.getElementById('btn-cancelar-edicao').style.display = '';
+
+    // Switch UI tab automatically without triggering the event listener cancel
+    const regTabs = document.querySelectorAll('#registrar-type-tabs .type-tab');
+    regTabs.forEach(b => b.classList.remove('active'));
+    document.querySelector('#registrar-type-tabs [data-type="afericao"]').classList.add('active');
+    activeRegisterType = 'afericao';
+    document.getElementById('form-afericao-container').style.display = '';
+    document.getElementById('form-glicemia-container').style.display = 'none';
+    document.getElementById('form-temperatura-container').style.display = 'none';
 
     showScreen('registrar');
 }
@@ -454,9 +484,6 @@ function editarGlicemia(id) {
 
     editingGlicemiaId = id;
 
-    // Forçar aba glicemia
-    document.querySelector('#registrar-type-tabs [data-type="glicemia"]').click();
-
     document.getElementById('reg-gli-edit-id').value = id;
     document.getElementById('reg-gli').value = g.glicemia;
     document.getElementById('reg-gli-momento').value = g.momento || 'jejum';
@@ -471,6 +498,15 @@ function editarGlicemia(id) {
     document.getElementById('registrar-titulo').textContent = 'Editar Glicemia';
     document.getElementById('btn-salvar-glicemia').textContent = 'Atualizar Glicemia';
     document.getElementById('btn-cancelar-edicao-gli').style.display = '';
+
+    // Switch UI tab automatically without triggering the event listener cancel
+    const regTabs = document.querySelectorAll('#registrar-type-tabs .type-tab');
+    regTabs.forEach(b => b.classList.remove('active'));
+    document.querySelector('#registrar-type-tabs [data-type="glicemia"]').classList.add('active');
+    activeRegisterType = 'glicemia';
+    document.getElementById('form-afericao-container').style.display = 'none';
+    document.getElementById('form-glicemia-container').style.display = '';
+    document.getElementById('form-temperatura-container').style.display = 'none';
 
     showScreen('registrar');
 }
@@ -491,9 +527,6 @@ function editarTemperatura(id) {
 
     editingTemperaturaId = id;
 
-    // Forçar aba temperatura
-    document.querySelector('#registrar-type-tabs [data-type="temperatura"]').click();
-
     document.getElementById('reg-temp-edit-id').value = id;
     document.getElementById('reg-temp').value = t.temperatura;
     document.getElementById('reg-temp-obs').value = t.observacao || '';
@@ -506,6 +539,15 @@ function editarTemperatura(id) {
     document.getElementById('registrar-titulo').textContent = 'Editar Temperatura';
     document.getElementById('btn-salvar-temperatura').textContent = 'Atualizar Temperatura';
     document.getElementById('btn-cancelar-edicao-temp').style.display = '';
+
+    // Switch UI tab automatically without triggering the event listener cancel
+    const regTabs = document.querySelectorAll('#registrar-type-tabs .type-tab');
+    regTabs.forEach(b => b.classList.remove('active'));
+    document.querySelector('#registrar-type-tabs [data-type="temperatura"]').classList.add('active');
+    activeRegisterType = 'temperatura';
+    document.getElementById('form-afericao-container').style.display = 'none';
+    document.getElementById('form-glicemia-container').style.display = 'none';
+    document.getElementById('form-temperatura-container').style.display = '';
 
     showScreen('registrar');
 }
@@ -764,7 +806,17 @@ function initPerfil() {
                 return;
             }
 
-            savePerfil({ nome, data_nascimento: nascimento || null, medicamentos: medicamentos || null, tecnico: tecnico || null });
+            // Pega o perfil existente ou inicializa um vazio (preservando o ID criado)
+            const perfilAtual = getPerfil() || {};
+            
+            savePerfil({ 
+                ...perfilAtual, 
+                nome, 
+                data_nascimento: nascimento || null, 
+                medicamentos: medicamentos || null, 
+                tecnico: tecnico || null 
+            });
+            
             showToast('Perfil atualizado!', 'success');
             renderPerfil();
         });
@@ -794,33 +846,21 @@ function initPerfil() {
         showToast('Planilha CSV gerada!', 'success');
     });
 
-    // Exportar WhatsApp
-    document.getElementById('btn-exportar-wa')?.addEventListener('click', async () => {
-        const dados = carregarDados();
-        const txt = gerarTextoWhatsApp(dados, 7); // Últimos 7 dias
-        
-        if (navigator.share) {
-            try {
-                await navigator.share({
-                    title: 'Meu Histórico de Saúde',
-                    text: txt
-                });
-                showToast('Compartilhado com sucesso!', 'success');
-            } catch (err) {
-                console.log('Erro no share:', err);
-                // Fallback para Clipboard
-                navigator.clipboard.writeText(txt).then(() => {
-                    showToast('Copiado para colar no WhatsApp!', 'success');
-                }).catch(() => {
-                    showToast('Erro ao copiar.', 'error');
-                });
+    // Exportar WhatsApp - Abre o Modal
+    document.getElementById('btn-exportar-wa')?.addEventListener('click', () => {
+        const overlay = document.getElementById('export-overlay');
+        if (overlay) {
+            overlay.style.display = '';
+            overlay.classList.add('modal-visible');
+            
+            // Sugere data de hoje no campo customizado
+            const customDateInput = document.getElementById('export-custom-date');
+            if (customDateInput) {
+                const agora = new Date();
+                const offset = agora.getTimezoneOffset();
+                const local = new Date(agora.getTime() - offset * 60000);
+                customDateInput.value = local.toISOString().split('T')[0];
             }
-        } else {
-            navigator.clipboard.writeText(txt).then(() => {
-                showToast('Copiado para colar no WhatsApp!', 'success');
-            }).catch(() => {
-                showToast('Erro ao copiar.', 'error');
-            });
         }
     });
 
@@ -1010,4 +1050,178 @@ function renderGraficoGlicemia() {
         }
     });
 
+}
+
+// =================== PACIENTES ===================
+
+function initPacientes() {
+    const formNovoPaciente = document.getElementById('form-novo-paciente');
+    if (formNovoPaciente) {
+        formNovoPaciente.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const nome = document.getElementById('novo-pac-nome').value.trim();
+            if (!nome) {
+                showToast('Informe o nome do paciente.', 'error');
+                return;
+            }
+            const novo = criarPaciente(nome);
+            
+            // O storage já vai ter trocado o paciente ativo internamente. Salva o perfil pro novo paciente.
+            savePerfil({ nome });
+            
+            showToast(`Paciente ${novo.nome} cadastrado!`, 'success');
+            
+            formNovoPaciente.reset();
+            
+            // Sinaliza para abrir o perfil logo após recarregar
+            sessionStorage.setItem('controle_arterial_force_perfil', 'true');
+            location.reload(); // Reinicia app para atualizar escopo
+        });
+    }
+}
+
+function renderPacientes() {
+    const container = document.getElementById('pacientes-list');
+    if (!container) return;
+
+    const pacientes = getPacientes();
+    const ativoId = getActivePacienteId();
+
+    if (pacientes.length === 0) {
+        container.innerHTML = `<p class="empty-state">Nenhum paciente encontrado. Cadastre abaixo.</p>`;
+        return;
+    }
+
+    let html = '';
+    pacientes.forEach(p => {
+        const isAtivo = p.id === ativoId;
+        const dataStr = new Date(p.dataCriacao).toLocaleDateString('pt-BR');
+
+        html += `
+        <div class="card" style="margin-bottom: 12px; border: ${isAtivo ? '1px solid var(--accent)' : '1px solid var(--border)'};">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <h4 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                        ${p.nome}
+                        ${isAtivo ? '<span class="badge" style="background: var(--accent); color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px;">Ativo</span>' : ''}
+                    </h4>
+                    <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-secondary);">Cadastrado: ${dataStr}</p>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    ${!isAtivo ? `
+                    <button class="btn-selecionar-pac" data-id="${p.id}" title="Selecionar" style="padding: 6px 12px; border-radius: 6px; border: 1px solid rgba(88,166,255,0.2); background: rgba(88,166,255,0.1); color: var(--accent); cursor:pointer;">
+                        Acessar
+                    </button>
+                    ` : ''}
+                    <button class="btn-delete-paciente" data-id="${p.id}" title="Excluir" style="background: none; border: none; color: var(--text-secondary); padding: 6px; cursor: pointer;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    // Listeners selecionar
+    container.querySelectorAll('.btn-selecionar-pac').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            setActivePaciente(id);
+            location.reload(); 
+        });
+    });
+
+    // Listeners excluir
+    container.querySelectorAll('.btn-delete-paciente').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const ok = await showModal('Excluir Paciente', 'ATENÇÃO: Isso apagará todos os dados deste paciente! Deseja continuar?', 'Excluir');
+            if (ok) {
+                excluirPaciente(id);
+                showToast('Paciente removido.', 'info');
+                location.reload();
+            }
+        });
+    });
+}
+
+/**
+ * Inicializa a lógica do Modal de Exportação WhatsApp
+ */
+function initExportWA() {
+    const periodOptions = document.getElementById('export-period-options');
+    const customContainer = document.getElementById('export-custom-date-container');
+    const customDateInput = document.getElementById('export-custom-date');
+    let selectedPeriod = '7'; // Default
+
+    if (periodOptions) {
+        periodOptions.addEventListener('click', (e) => {
+            const chip = e.target.closest('.export-chip');
+            if (!chip) return;
+
+            // Update UI
+            periodOptions.querySelectorAll('.export-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+
+            selectedPeriod = chip.dataset.days;
+
+            // Show/Hide custom date input
+            if (selectedPeriod === 'custom') {
+                customContainer.style.display = 'block';
+            } else {
+                customContainer.style.display = 'none';
+            }
+        });
+    }
+
+    document.getElementById('btn-cancelar-export')?.addEventListener('click', () => {
+        fecharModalExport();
+    });
+
+    document.getElementById('btn-confirmar-export')?.addEventListener('click', async () => {
+        let period = selectedPeriod;
+        if (period === 'custom') {
+            period = customDateInput.value;
+            if (!period) {
+                showToast('Selecione uma data específica.', 'error');
+                return;
+            }
+        }
+
+        const dados = carregarDados();
+        const perfil = getPerfil() || {};
+        const texto = gerarTextoWhatsApp(perfil, dados, period);
+
+        fecharModalExport();
+
+        if (navigator.share) {
+            try {
+                await navigator.share({
+                    title: 'Histórico de Saúde',
+                    text: texto
+                });
+                showToast('Exportação gerada!', 'success');
+            } catch (err) {
+                console.log("Erro ao compartilhar:", err);
+                // Fallback para Clipboard
+                navigator.clipboard.writeText(texto);
+                showToast('Texto copiado para o WhatsApp!', 'success');
+            }
+        } else {
+            navigator.clipboard.writeText(texto);
+            showToast('Texto copiado!', 'success');
+        }
+    });
+}
+
+function fecharModalExport() {
+    const overlay = document.getElementById('export-overlay');
+    if (overlay) {
+        overlay.classList.remove('modal-visible');
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 250);
+    }
 }

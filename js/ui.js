@@ -38,6 +38,7 @@ function initNav() {
         if (screenId === 'historico') renderHistorico();
         if (screenId === 'perfil') renderPerfil();
         if (screenId === 'registrar') prepararFormRegistro();
+        if (screenId === 'pacientes') renderPacientes();
     });
 }
 

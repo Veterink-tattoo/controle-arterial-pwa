@@ -744,6 +744,55 @@ p { color: var(--text-secondary); line-height: 1.5; }
     justify-content: flex-end;
 }
 
+/* =================== EXPORT MODAL =================== */
+
+.export-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.export-chip {
+    padding: 8px 16px;
+    background: var(--bg-card-elevated);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.export-chip:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+.export-chip.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.export-date-container {
+    margin-top: 12px;
+    animation: fadeIn 0.3s ease;
+}
+
+.export-date-container label {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    margin-bottom: 6px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* =================== EMPTY STATE =================== */
 
 .empty-state {

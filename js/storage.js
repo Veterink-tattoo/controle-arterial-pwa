@@ -2,7 +2,106 @@
    CONTROLE ARTERIAL — Storage Layer
    ============================ */
 
-const STORAGE_KEY = 'controle_arterial_data';
+const REGISTRY_KEY = 'controle_arterial_patients';
+const ACTIVE_PATIENT_KEY = 'controle_arterial_current_patient';
+const OLD_STORAGE_KEY = 'controle_arterial_data';
+
+/**
+ * Setup inicial / Migração de dados antigos
+ */
+function initStorage() {
+    const pacientes = getPacientes();
+    const rawOld = localStorage.getItem(OLD_STORAGE_KEY);
+    
+    if (pacientes.length === 0 && rawOld) {
+        try {
+            const oldData = JSON.parse(rawOld);
+            const nomePaciente = oldData.perfil?.nome || 'Paciente 1';
+            
+            const newPatientId = 'paciente_' + gerarId();
+            localStorage.setItem(ACTIVE_PATIENT_KEY, newPatientId);
+            salvarPacientes([{ id: newPatientId, nome: nomePaciente, dataCriacao: new Date().toISOString() }]);
+            
+            localStorage.setItem(getStorageKey(), JSON.stringify(oldData));
+            localStorage.removeItem(OLD_STORAGE_KEY);
+        } catch (e) {
+            console.error("Erro na migração:", e);
+        }
+    }
+    
+    if (!localStorage.getItem(ACTIVE_PATIENT_KEY)) {
+        localStorage.setItem(ACTIVE_PATIENT_KEY, '');
+    }
+}
+
+function getStorageKey() {
+    const active = localStorage.getItem(ACTIVE_PATIENT_KEY);
+    return `controle_arterial_data_${active || 'default'}`;
+}
+
+// ==== PACIENTES ====
+
+function getPacientes() {
+    try {
+        const raw = localStorage.getItem(REGISTRY_KEY);
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
+}
+
+function salvarPacientes(lista) {
+    localStorage.setItem(REGISTRY_KEY, JSON.stringify(lista));
+}
+
+function getActivePacienteId() {
+    return localStorage.getItem(ACTIVE_PATIENT_KEY) || null;
+}
+
+function getActivePaciente() {
+    const id = getActivePacienteId();
+    if (!id) return null;
+    return getPacientes().find(p => p.id === id) || null;
+}
+
+function setActivePaciente(id) {
+    localStorage.setItem(ACTIVE_PATIENT_KEY, id);
+}
+
+function criarPaciente(nome) {
+    const id = 'paciente_' + gerarId();
+    const pacientes = getPacientes();
+    const novo = { id, nome, dataCriacao: new Date().toISOString() };
+    pacientes.push(novo);
+    salvarPacientes(pacientes);
+    setActivePaciente(id);
+    salvarDados(getDefaultData());
+    return novo;
+}
+
+function atualizarNomePaciente(nome) {
+    const id = getActivePacienteId();
+    if (!id) return;
+    const pacientes = getPacientes();
+    const p = pacientes.find(x => x.id === id);
+    if (p && p.nome !== nome) {
+        p.nome = nome;
+        salvarPacientes(pacientes);
+    }
+}
+
+function excluirPaciente(id) {
+    let pacientes = getPacientes();
+    pacientes = pacientes.filter(p => p.id !== id);
+    salvarPacientes(pacientes);
+    localStorage.removeItem(`controle_arterial_data_${id}`);
+    
+    if (getActivePacienteId() === id) {
+        setActivePaciente(pacientes.length > 0 ? pacientes[0].id : '');
+    }
+}
+
+// ============================
 
 /**
  * Estrutura inicial de dados
@@ -21,7 +120,7 @@ function getDefaultData() {
  */
 function carregarDados() {
     try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = localStorage.getItem(getStorageKey());
         if (!raw) return getDefaultData();
         const data = JSON.parse(raw);
         return {
@@ -39,7 +138,10 @@ function carregarDados() {
  * Salva todos os dados no LocalStorage
  */
 function salvarDados(data) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(getStorageKey(), JSON.stringify(data));
+    if (data.perfil && data.perfil.nome) {
+        atualizarNomePaciente(data.perfil.nome);
+    }
 }
 
 // =================== PERFIL ===================
@@ -261,5 +363,5 @@ function importarDados(jsonString) {
 }
 
 function limparTodosDados() {
-    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(getStorageKey());
 }

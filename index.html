@@ -620,6 +620,31 @@
       </div>
     </section>
 
+    <!-- ========== PACIENTES ========== -->
+    <section id="screen-pacientes" class="screen">
+      <div class="screen-content">
+        <header class="screen-header">
+          <h2>Meus Pacientes</h2>
+        </header>
+
+        <div id="pacientes-list" class="pacientes-list timeline">
+          <!-- Será preenchido via JS -->
+          <p class="empty-state">Nenhum paciente encontrado.</p>
+        </div>
+
+        <div class="form-card" style="margin-top: 24px;">
+          <h3>Cadastrar Novo Paciente</h3>
+          <form id="form-novo-paciente" autocomplete="off">
+            <div class="input-group">
+              <label for="novo-pac-nome">Nome do Paciente</label>
+              <input type="text" id="novo-pac-nome" placeholder="Ex: Maria" required maxlength="30">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;">Criar Paciente</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
     <!-- ========== BOTTOM NAV ========== -->
     <nav id="bottom-nav" class="bottom-nav" style="display:none;">
       <button class="nav-item active" data-screen="dashboard">
@@ -652,6 +677,18 @@
         </span>
         <span class="nav-label">Histórico</span>
       </button>
+      <button class="nav-item" data-screen="pacientes">
+        <span class="nav-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+        </span>
+        <span class="nav-label">Pacientes</span>
+      </button>
       <button class="nav-item" data-screen="perfil">
         <span class="nav-icon">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -675,6 +712,36 @@
         <div class="modal-actions">
           <button id="modal-cancel" class="btn btn-secondary">Cancelar</button>
           <button id="modal-confirm" class="btn btn-danger">Confirmar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de Exportação WhatsApp -->
+    <div id="export-overlay" class="modal-overlay" style="display:none;">
+      <div class="modal">
+        <h3>Exportar para WhatsApp</h3>
+        <p>Escolha o período de dados que deseja enviar:</p>
+        
+        <div class="export-options" id="export-period-options">
+          <button class="export-chip" data-days="1">Hoje</button>
+          <button class="export-chip active" data-days="7">7 dias</button>
+          <button class="export-chip" data-days="30">30 dias</button>
+          <button class="export-chip" data-days="all">Tudo</button>
+          <button class="export-chip" data-days="custom">Outro dia</button>
+        </div>
+
+        <div id="export-custom-date-container" class="export-date-container" style="display:none;">
+          <div class="input-group">
+            <label for="export-custom-date">Selecione o dia específico</label>
+            <input type="date" id="export-custom-date">
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 24px;">
+          <button id="btn-cancelar-export" class="btn btn-secondary">Cancelar</button>
+          <button id="btn-confirmar-export" class="btn btn-primary" style="background: #25D366; box-shadow: 0 4px 14px rgba(37,211,102,0.3);">
+            Gerar Exportação
+          </button>
         </div>
       </div>
     </div>
